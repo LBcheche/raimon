@@ -1,0 +1,7 @@
+[theme]
+base = "dark"
+primaryColor = "#d66800"             # verde destaque (spring green)
+backgroundColor = "#0E1117"            # fundo escuro (preto-acinzentado)
+secondaryBackgroundColor = "#262730"   # cards, sidebar, inputs
+textColor = "#FFFFFF"                  # branco puro
+font = "sans serif"
