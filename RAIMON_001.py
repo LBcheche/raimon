@@ -266,15 +266,34 @@ def create_ui_tab_setup(tab):
     
     st.session_state['model'] = selected_model
 
-    selected_focus = tab.selectbox('Selecione o foco do R.A.I.M.O.N.:', 
-                                   ['Debate Livre',
-                                    'Pense Comigo', 
-                                    'Prot. de Combate ao Medo',
-                                    'Prot. de Combate à Dependência Emocional', 
-                                    'Prot. de Combate à Culpa' ,
-                                    'Prot. de Proteção Emocional',
-                                    'Conversa Difícil'] )
+    # selected_focus = tab.selectbox('Selecione o foco do R.A.I.M.O.N.:', 
+    #                                ['Debate Livre',
+    #                                 'Pense Comigo', 
+    #                                 'Prot. de Combate ao Medo',
+    #                                 'Prot. de Combate à Dependência Emocional', 
+    #                                 'Prot. de Combate à Culpa' ,
+    #                                 'Prot. de Proteção Emocional',
+    #                                 'Conversa Difícil'] )
     
+    opcoes = [
+        'Debate Livre',
+        '✖️ Pense Comigo',
+        '✖️ Prot. de Combate ao Medo',
+        '✖️ Prot. de Combate à Dependência Emocional',
+        '✖️ Prot. de Combate à Culpa',
+        '✖️ Prot. de Proteção Emocional',
+        '✖️ Conversa Difícil'
+    ]
+
+    selected_focus = tab.selectbox('Selecione o foco do R.A.I.M.O.N.:', opcoes)
+
+    if selected_focus != 'Debate Livre':
+        tab.warning("Esse modo ainda não está disponível.")
+    else:
+        tab.success(f"Foco selecionado: {selected_focus}")
+
+
+
     st.session_state['focus'] = selected_focus
 
 def create_new_chat_button_in_tab(tab):
