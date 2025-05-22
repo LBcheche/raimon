@@ -12,7 +12,7 @@ load_dotenv(find_dotenv())
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 MESSAGES_FOLDER = Path(__file__).parent / 'MESSAGES'
 MESSAGES_FOLDER.mkdir(exist_ok=True)
-MESSAGES_TYPE = '*'
+MESSAGES_TYPE = '*.pkl'
 DEFAULT_MODEL = 'gpt-3.5-turbo'
 
 def get_model_response(messages, openai_key, temperature = 0,stream = False):
@@ -75,17 +75,17 @@ def get_chat_titles_list():
 def set_chat_at_session_by_title(chat_title):
     if chat_title == '':
         set_new_session()
-
+        save_messages(st.session_state['messages'])  # <- garante criação física do arquivo
+        st.session_state['should_rerun'] = True
     else:
-        
         file_paths = get_full_file_names_list()
-
         for path in file_paths:
             data = load_pickle_file_by_path(path)
             if data and data.get('chat_title') == chat_title:
                 st.session_state.messages = data['messages']
-                st.session_state.file_name = data['file_name']  
+                st.session_state.file_name = data['file_name']
                 break
+
 
 def set_new_session():
    
@@ -217,15 +217,17 @@ def create_simplified_title(title):
     return re.sub(r'[^a-zA-Z0-9_-]', '', unidecode(title))
    
 def create_chat_title_and_file_name(messages):
-
     chat_title = ''
 
     for message in messages:
         if message['role'] == 'user':
             chat_title = message['content'][:30]
             break
-    
-    file_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{create_simplified_title(chat_title)}"
+
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    sanitized_title = create_simplified_title(chat_title)
+
+    file_name = f"{timestamp}_{sanitized_title}.pkl"
 
     return chat_title, file_name
 
@@ -306,24 +308,28 @@ def create_new_chat_button_in_tab(tab):
 # Code with Delete Botton 
 # ---------------------------------------------------
 
+
+
 def delete_chat_by_title(chat_title):
-   
     file_paths = get_full_file_names_list()
-    
 
     for path in file_paths:
-        print(path)
         data = load_pickle_file_by_path(path)
         if data and data.get('chat_title') == chat_title:
             try:
                 os.remove(path)
-                
+
+                # Se o chat deletado for o atualmente carregado, reseta a sessão
+                if st.session_state.get('file_name') == data.get('file_name'):
+                    set_new_session()
+                    st.session_state['should_rerun'] = True
+
             except OSError:
-                
                 pass
             break
-    
+
     st.session_state['show_menu'].pop(chat_title, None)
+
 
 def create_chat_buttons_in_tab(tab, chat_titles):
     # Inicializa o controle de visibilidade dos menus
@@ -372,7 +378,6 @@ def create_chat_buttons_in_tab(tab, chat_titles):
                 st.rerun()
 
 
-
 #===========================================================================
 
 
@@ -383,6 +388,11 @@ def main():
     tab1, tab2 = st.sidebar.tabs(['Chats', 'Setup'])
     create_ui_tab_chats(tab1)
     create_ui_tab_setup(tab2)
+
+    if st.session_state.get('should_rerun', False):
+        st.session_state['should_rerun'] = False
+        st.rerun()
+
 
 
 if __name__ == '__main__':
