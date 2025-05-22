@@ -307,14 +307,19 @@ def create_new_chat_button_in_tab(tab):
 # ---------------------------------------------------
 
 def delete_chat_by_title(chat_title):
+   
     file_paths = get_full_file_names_list()
+    
 
     for path in file_paths:
+        print(path)
         data = load_pickle_file_by_path(path)
         if data and data.get('chat_title') == chat_title:
             try:
                 os.remove(path)
+                
             except OSError:
+                
                 pass
             break
     
