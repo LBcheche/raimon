@@ -260,9 +260,20 @@ def create_ui_tab_chats (tab):
 
 def create_ui_tab_setup(tab):
     
-    selected_model = tab.selectbox('Selecione o modelo', ['gpt-3.5-turbo', 'gpt-4o'] )
+    selected_model = tab.selectbox('Selecione o modelo:', ['gpt-3.5-turbo', 'gpt-4o'] )
     
     st.session_state['model'] = selected_model
+
+    selected_focus = tab.selectbox('Selecione o foco do R.A.I.M.O.N.:', 
+                                   ['Debate Livre',
+                                    'Pense Comigo', 
+                                    'Prot. de Combate ao Medo',
+                                    'Prot. de Combate à Dependência Emocional', 
+                                    'Prot. de Combate à Culpa' ,
+                                    'Prot. de Proteção Emocional',
+                                    'Conversa Difícil'] )
+    
+    st.session_state['focus'] = selected_focus
 
 def create_new_chat_button_in_tab(tab):
 
@@ -271,20 +282,97 @@ def create_new_chat_button_in_tab(tab):
                args = ('', ),
                use_container_width = True) 
 
+
+
+#===========================================================================
+#                             CHAT BOTTONS
+#===========================================================================
+# ---------------------------------------------------
+# Code without Delete Botton 
+# ---------------------------------------------------
+# def create_chat_buttons_in_tab(tab, chat_titles):
+
+#     for i, title in enumerate(chat_titles):
+
+#         tab.button(
+#             title,
+#             on_click=set_chat_at_session_by_title,
+#             args=(title,),
+#             use_container_width=True,
+#             key=f"chat_button_{i}"  # chave única por índice
+#         )
+ 
+# ---------------------------------------------------
+# Code with Delete Botton 
+# ---------------------------------------------------
+
+def delete_chat_by_title(chat_title):
+    file_paths = get_full_file_names_list()
+
+    for path in file_paths:
+        data = load_pickle_file_by_path(path)
+        if data and data.get('chat_title') == chat_title:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+            break
+    
+    st.session_state['show_menu'].pop(chat_title, None)
+
 def create_chat_buttons_in_tab(tab, chat_titles):
+    # Inicializa o controle de visibilidade dos menus
+    if 'show_menu' not in st.session_state:
+        st.session_state['show_menu'] = {}
 
     for i, title in enumerate(chat_titles):
+        col1, col2 = tab.columns([6, 1])
 
-        tab.button(
-            title,
-            on_click=set_chat_at_session_by_title,
-            args=(title,),
-            use_container_width=True,
-            key=f"chat_button_{i}"  # chave única por índice
-        )
- 
+        # Botão para selecionar o chat
+        with col1:
+            col1.button(
+                title,
+                on_click=set_chat_at_session_by_title,
+                args=(title,),
+                use_container_width=True,
+                key=f"chat_button_{i}"
+            )
+
+        # Botão "..." para mostrar ou esconder menu
+        with col2:
+            if col2.button("...", key=f"menu_toggle_{i}"):
+                current_state = st.session_state['show_menu'].get(title, False)
+                st.session_state['show_menu'][title] = not current_state
+
+        # Se o menu estiver aberto, mostra os botões Deletar e Cancelar
+        if st.session_state['show_menu'].get(title, False):
+            action_col = tab.container()
+
+            with action_col:
+                col_left, col_right = st.columns([1, 1])
+
+                with col_left:
+                    delete = st.button("Deletar", key=f"delete_{i}",use_container_width=True)
+
+                with col_right:
+                    cancel = st.button("Cancelar", key=f"cancel_{i}",use_container_width=True)
+
+            # Ações
+            if delete:
+                delete_chat_by_title(title)
+                st.rerun()
+
+            if cancel:
+                st.session_state['show_menu'][title] = False
+                st.rerun()
+
+
+
+#===========================================================================
+
 
 def main():
+
     create_main_page()
 
     tab1, tab2 = st.sidebar.tabs(['Chats', 'Setup'])
